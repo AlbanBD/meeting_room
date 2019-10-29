@@ -6,5 +6,11 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'meetingRoom';
+  date:Date;
+  constructor(){
+    setInterval(() => {
+      this.date = new Date()
+    }, 1000)
+  }
+
 }

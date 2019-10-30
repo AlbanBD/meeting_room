@@ -1,5 +1,5 @@
 import {Component,OnInit } from '@angular/core';
-import {MeetingRoomService}from './meeting-room.service';
+import {MeetingRoomService} from '../meeting-room.service';
 import {Subscription } from 'rxjs';
 
 @Component({
@@ -18,7 +18,7 @@ export class CodeComponent implements OnInit {
   ngOnInit()
   {
     this.codeSubscription = this.mroomService.actualCode.subscribe(
-      code=>{this.code_reunion=code};
+      code=>{this.code_reunion=code});
   }
 
 }

@@ -4,6 +4,9 @@ import { NgModule } from '@angular/core';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CodeComponent } from './code/code.component';
+import { SocketIoModule, SocketIoConfig} from 'ngx-socket-io';
+
+const config:SocketIoConfig={url:'http://localhost:4444', options:{}};
 
 @NgModule({
   declarations: [
@@ -12,7 +15,8 @@ import { CodeComponent } from './code/code.component';
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    SocketIoModule.forRoot(config)
   ],
   providers: [],
   bootstrap: [AppComponent]

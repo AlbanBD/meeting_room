@@ -5,6 +5,7 @@ import { Socket } from 'ngx-socket-io';
   providedIn: 'root'
 })
 export class MeetingRoomService {
+
   actualCode = this.socket.fromEvent<string>('book_code');
 
   constructor(private socket:Socket) {

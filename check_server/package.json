@@ -1,0 +1,27 @@
+{
+  "name": "check_server",
+  "version": "1.0.0",
+  "description": "server which check the attendance of people in a meeting room",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlbanBD/meeting_room.git"
+  },
+  "author": "lafritemema",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AlbanBD/meeting_room/issues"
+  },
+  "homepage": "https://github.com/AlbanBD/meeting_room#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "mongodb": "^3.3.3",
+    "socket.io": "^2.3.0"
+  }
+}

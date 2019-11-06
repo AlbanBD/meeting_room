@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" type="text/css" href="sheet.css" media="all"/>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+</head>
+<body>
+  <app-root></app-root>
+<div class="col-sm-1 leboutton component">
+<button id="boutton" onfocus="document.getElementById('enfant').style.display='block';" onblur="document.getElementById('enfant').style.display='none'"> </button>
+    <ul id="enfant" style="display: none">
+    <li>Me</li>
+    <li>Myself</li>
+    <li>And I</li>
+  </ul>
+</div>
+<div class="col-sm-11 heure component">
+
+  <h1 id="div_date" class="texte3"></h1>
+  <hr>
+  <h1 id="div_horloge" class='texte3'></h1>
+</div>
+</div>
+  <div ng-app="myApp">
+		<div class="col-sm-5 next component">
+			<h1>Prochaines Reunions:</h1>
+      <hr>
+			<h1 class='texte'>Florent DUBOIS : 10h00</h1>
+			<h1 class='texte'>Vincent CORDINA : 11h00</h1>
+			<h1 class='texte'>Marc CARRE : 14h00</h1>
+			<h1 class='texte'>Simon NICOLAI : 15h00</h1>
+		</div>
+    <div class="col-sm-7 code component">
+      <div class="ecart useless">
+      <h1>Code Reunion:</h1>
+      <hr>
+      <br>
+      <br>
+      <h1 id="code_reunion" class='texte2' ></h1>
+	  <br>
+	  <h1 id="retour"></h1>
+    </div>
+  </div>
+    <script type="text/javascript">
+      window.onload = function() {
+        horloge('div_horloge');
+      };
+      function horloge(el) {
+        if (typeof el == "string") {
+          el = document.getElementById(el);
+        }
+        function actualiser() {
+          var date = new Date();
+          var str = date.getHours();
+          str += ':' + (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();
+          str += ':' + (date.getSeconds() < 10 ? '0' : '') + date.getSeconds();
+          el.innerHTML = str;
+        }
+        actualiser();
+        setInterval(actualiser, 500);
+      }
+    </script>
+
+	<script language="JavaScript">
+        document.write("<font color='#000000' size='7' face='arial'>")
+        var mydate = new Date()
+        var year = mydate.getYear()
+        if (year < 2000)
+          year += (year < 1900) ? 1900 : 0
+        var day = mydate.getDay()
+        var month = mydate.getMonth()
+        var daym = mydate.getDate()
+        if (daym < 10)
+          daym = "0" + daym
+        var dayarray = new Array("Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi")
+        var montharray = new Array(" Janvier ", " Février ", " Mars ", "Avril ", "Mai ", "Juin", "Juillet ", "Août ", "Septembre ", " Octobre ", " Novembre ", " Décembre ")
+        document.getElementById('div_date').innerHTML = ("   " + dayarray[day] + ", " + daym + " " + montharray[month] + year + " ")
+        document.write("</b></i></font>")
+    </script>
+</body>
+</html>

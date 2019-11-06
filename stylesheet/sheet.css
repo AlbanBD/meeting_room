@@ -1,0 +1,52 @@
+html{
+  background: url(jedi.jpg) no-repeat;
+  background-position: center;
+}
+div{
+border: solid;
+  text-align: center;
+  }
+
+.component{
+background-color: rgba(255,255,255,0.6);
+}
+
+.next{
+right: 0.5px;
+top: 1px;
+  height: 750px;
+  overflow: hidden;
+}
+.code{
+  left: 0.5px;
+  top: 1px;
+  height: 750px;
+  text-align: center;
+
+}
+.heure{
+  height: 175px;
+
+}
+.useless{
+  border: none;
+}
+.ecart{
+  margin-top: 250px;
+}
+.leboutton{
+  height: 175px;
+  padding-top: 10px;
+}
+button{
+  height: 50px;
+  width: 50px;
+  background-image:url("bouton_menu.png");
+  background-size: contain;
+  background-position: center;
+}
+li{
+
+  text-indent: -100%;
+  list-style-type: none;
+}

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-root',
@@ -6,13 +6,17 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.css']
 })
 
-export class AppComponent {
+export class AppComponent implements OnInit{
   date:Date;
-  constructor(){
+
+  constructor(){}
+
+  ngOnInit()
+  {
     //Interval de 500ms pour afficher dynamiquement la date et l'heure
     setInterval(() => {
-      this.date = new Date()
-    }, 500)
+      this.date = new Date();
+    }, 500);
   }
 
 }

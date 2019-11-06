@@ -1,6 +1,7 @@
 import {Component,OnInit } from '@angular/core';
 import {MeetingRoomService} from '../meeting-room.service';
 import {Subscription } from 'rxjs';
+import {Event} from '../calendarEvent';
 
 @Component({
   selector: 'app-code',
@@ -11,14 +12,14 @@ import {Subscription } from 'rxjs';
 export class CodeComponent implements OnInit {
 
   codeSubscription:Subscription;
-  code_reunion:string;
+  meeting:Event;
 
   constructor(private mroomService:MeetingRoomService) {
   }
   ngOnInit()
   {
     this.codeSubscription = this.mroomService.actualCode.subscribe(
-      code=>{this.code_reunion=code});
+      (event)=>{this.meeting=event});
   }
 
 }

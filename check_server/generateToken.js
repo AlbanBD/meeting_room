@@ -1,4 +1,4 @@
-var gcc = require('./gcalendar/gcalendar_connector');
+var gcc = require('./app_modules/gcalendar_connector');
 var fs = require('fs');
 var fs = require('path')
 

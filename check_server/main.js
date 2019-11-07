@@ -9,21 +9,21 @@ const http = require('http').Server(app);
 //import io.Socket and link to http
 const io = require('socket.io')(http)
 //import mongotools to mongo connection
-const mgt = require('./mongotools');
+const mgt = require('./app_modules/mongotools');
 const _mongodbdb = 'res_room';
 const _mongodbtable = 'reservations';
 //import gcalendar_tools with credentials
 const calendar_credential = './credentials/gcalendar_credentials.json';
-const gcalapi = require('./gcalendar/gcalendar_connector');
+const gcalapi = require('./app_modules/gcalendar_connector');
 
 const personal_calendar = 'kgto7ofa0s0i49jmhal6rhte68@group.calendar.google.com';
 
 
 // server listen port
 const _server_port = 4444;
-
+var gcal = null;
 try {
-  const gcal = gcalapi.getWithCredentialFile(calendar_credential);
+  gcal = gcalapi.getWithCredentialFile(calendar_credential);
 } catch (e) {
   if(e.code =='token')
   {
@@ -48,7 +48,7 @@ app.post('/meetingCommand', (req,res) =>
 			{
 				if(dberr){
           console.log(`Error: getting code from database : aborted\nInfos : ${dberr}`);
-          res.end(JSON.stringify({'command':'validation', 'result':'error'});
+          res.end(JSON.stringify({'command':'validation', 'result':'error'}));
         }
         else
         {
@@ -59,12 +59,12 @@ app.post('/meetingCommand', (req,res) =>
             {
               if(uperr){
                 console.log(`Error : saving validation in database : aborted\nInfos : ${uperr}`);
-                res.end(JSON.stringify({'command':'validation', 'result':'error'});
+                res.end(JSON.stringify({'command':'validation', 'result':'error'}));
               }
               else
               {
                 console.log(`Saving validation : success`);
-                res.end(JSON.stringify({'command':'validation', 'result':'valid'});
+                res.end(JSON.stringify({'command':'validation', 'result':'valid'}));
               }
             });
           }
@@ -83,17 +83,16 @@ app.post('/meetingCommand', (req,res) =>
       {
         if(uperr){
           console.log(`Error : saving annulation in database : aborted\nInfos : ${uperr}`);
-          res.end(JSON.stringify({'command':'annulation', 'result':'error'})
+          res.end(JSON.stringify({'command':'annulation', 'result':'error'}));
         }
         else
         {
           console.log(`Saving annulation : success`);
-          res.end(JSON.stringify({'command':'annulation', 'result':'valid'})
+          res.end(JSON.stringify({'command':'annulation', 'result':'valid'}));
         }
       });
       break;
     }
-  }
 }).get('/currentMeeting', (req, res)=>
 {
   var login = req.body.id;
@@ -128,7 +127,7 @@ http.listen(_server_port,() => {
     //var x = setInterval(launchMRProcess, RINTERVAL);
 });
 
-io.socket.on('connection', (socket)=>
+io.sockets.on('connection', (socket)=>
 {
   launchMRProcess();
 });

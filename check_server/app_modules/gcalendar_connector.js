@@ -48,20 +48,20 @@ class CalendarConnector
             var events_list = [];
             events.forEach((event)=>
             {
-            events_list.push(
-              new CalendarEvent(
-                event.id,
-                event.summary,
-                event.creator.email,
-                event.created,
-                event.updated,
-                event.organizer.email,
-                event.organizer.displayName,
-                event.start.dateTime,
-                event.end.dateTime,
-                event.htmllink,
-                event.hangoutLink)
-              )
+              events_list.push(
+                new CalendarEvent(
+                  event.id,
+                  event.summary,
+                  event.creator.email,
+                  event.created,
+                  event.updated,
+                  event.organizer.email,
+                  event.organizer.displayName,
+                  event.start.dateTime,
+                  event.end.dateTime,
+                  event.htmllink,
+                  event.hangoutLink)
+                )
             });
             resolve(events_list);
           } else {
@@ -108,7 +108,7 @@ function getWithCredentialFile(cred_file)
     const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
     oAuth2Client.setCredentials(JSON.parse(tokenContent));
 
-    return new CalendarConnector(google.calendar({version: 'v3', oAuth2Client}));
+    return new CalendarConnector(google.calendar({version: 'v3', auth:oAuth2Client}));
 
   } catch (e) {
       if (e.code == 'ENOENT')
@@ -139,7 +139,7 @@ function generateAccessToken(credentialFile, callback) {
   fs.readFile(credentialFile, 'utf8', (err, content)=>
   {
     if(err)callback(err);
-    const {client_secret, client_id, redirect_uris} = (JSON.parse(content)).installed;
+    const {client_secret, client_id, redirect_uris} = (JSON.parse(credContent)).installed;
     if(client_secret && client_id && redirect_uris)
     {
       const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
@@ -158,6 +158,7 @@ function generateAccessToken(credentialFile, callback) {
         rl.close();
         oAuth2Client.getToken(code, (err, token) => {
           if (err) callback('Error retrieving access token', err);
+          console.log(token)
           // Store the token to disk for later program executions
           fs.writeFile(path.dirname(credentialFile)+'/token.json', JSON.stringify(token), (err) => {
             if (err) callback(err);

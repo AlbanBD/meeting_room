@@ -13,130 +13,124 @@ const mgt = require('./mongotools');
 const _mongodbdb = 'res_room';
 const _mongodbtable = 'reservations';
 //import gcalendar_tools with credentials
-const calendar_credential = './gcalendar/gcalendar_credentials.json';
+const calendar_credential = './credentials/gcalendar_credentials.json';
 const gcalapi = require('./gcalendar/gcalendar_connector');
-const gcal = gcalapi.getWithCredentialFile(calendar_credential);
+
 const personal_calendar = 'kgto7ofa0s0i49jmhal6rhte68@group.calendar.google.com';
 
 
 // server listen port
 const _server_port = 4444;
 
+try {
+  const gcal = gcalapi.getWithCredentialFile(calendar_credential);
+} catch (e) {
+  if(e.code =='token')
+  {
+    console.log(e.message);
+    console.log('Use the commande "node generateToken.js [credential_file]" to create token file')
+  }
+  else {
+    console.log(e.message);
+  }
+}
+
 //I use bodyparser to parse requests
 app.use(bodyParser.json())
-
-app.get('/room_planning/:text',(req, res) => {
-
-
-}).post('/confirmation', (req,res) =>
+app.post('/meetingCommand', (req,res) =>
 {
-    console.log(req.body);
-		var book_id = req.body.book_id;
-		var code = req.body.code;
-		console.log(`Code received from client for booking ${book_id} : ${code}`);
-		if(!isNaN(parseInt(code)))
-		{
-			console.log('Getting booking code from database...')
-      var mgobj = new mongoObjId(book_id);
-			mgt.getInDB({'_id':mgobj}, _mongodbdb, _mongodbtable, (dberr,dbres)=>
+  switch(req.body.command)
+  {
+    case 'validation':
+      console.log(`Validation request received from client for meeting ${req.body._id} : ${req.body.code}`);
+      console.log('Getting meeting code from database...')
+			mgt.getInDB(req.body._id, _mongodbdb, _mongodbtable, (dberr,dbres)=>
 			{
-        var dbcode = dbres.code;
-        console.log(`Booking code from de database ${dbcode}`);
-				if(dberr){console.log(`Error: getting code from database : aborted\nInfos : ${dberr}`)}
+				if(dberr){
+          console.log(`Error: getting code from database : aborted\nInfos : ${dberr}`);
+          res.end(JSON.stringify({'command':'validation', 'result':'error'});
+        }
         else
         {
-          if(parseInt(dbcode)==parseInt(code))
+          if(req.body.code==dbres.code)
   				{
   					console.log('Client code valid, saving validation on the database...');
-            mgt.updateStatusInDB(book_id, _mongodbdb, _mongodbtable, (uperr, upres)=>
+            mgt.updateStatusInDB(meet_id, 'validate', _mongodbdb, _mongodbtable, (uperr)=>
             {
-              if(uperr){console.log(`Error : saving validation in database : aborted\nInfos : ${uperr}`);}
+              if(uperr){
+                console.log(`Error : saving validation in database : aborted\nInfos : ${uperr}`);
+                res.end(JSON.stringify({'command':'validation', 'result':'error'});
+              }
               else
               {
                 console.log(`Saving validation : success`);
+                res.end(JSON.stringify({'command':'validation', 'result':'valid'});
               }
             });
           }
           else
           {
             console.log('Client code not valid, sending message.');
+            res.end(JSON.stringify({'command':'validation', 'result':'unvalid'}));
           }
         }
         });
-		}
-    else {
-      console.log('error')
+        break;
+    case 'annulation':
+      console.log(`Validation request received from client for meeting ${req.body._id} : ${req.body.code}`);
+      console.log('Getting meeting code from database...');
+      mgt.updateStatusInDB(meet_id, 'annulate', _mongodbdb, _mongodbtable, (uperr)=>
+      {
+        if(uperr){
+          console.log(`Error : saving annulation in database : aborted\nInfos : ${uperr}`);
+          res.end(JSON.stringify({'command':'annulation', 'result':'error'})
+        }
+        else
+        {
+          console.log(`Saving annulation : success`);
+          res.end(JSON.stringify({'command':'annulation', 'result':'valid'})
+        }
+      });
+      break;
     }
+  }
 }).get('/currentMeeting', (req, res)=>
 {
-  console.log(req);
   var login = req.body.id;
+  console.log(`Request to get meeting for ${login}`);
   mgt.getInDB({'creator':login,'status':'pending'}, _mongodbdb, _mongodbtable, (dberr, dbres) =>
   {
     if(dberr){console.log(`Error: getting code from database : aborted\nInfos : ${dberr}`)}
     else {
-      res.setHeader('Content-Type','application/json')
-      try{
-        res.send(JSON.stringify(dbres));
-      }
-      catch(TypeError)
+      if (dbres)
       {
-        res.send(JSON.stringify(null));
+        console.log(`Meeting found with id ${dbres._id}`);
+        var data = {'_id':dbres._id, 'eventId': dbres.id, 'description': dbres.description, 'startdate': dbres.startdate, 'enddate':dbres.enddate, 'room':dbres.organiserName}
+        res.setHeader('Content-Type','application/json');
+        console.log('send result to client.')
+        res.send(JSON.stringify(data));
+      }
+      else {
+        console.log('No meeting found, send null to client')
+        res.send(null);
       }
     }
   });
-}).post('/newcode', (req,res)=>
-{
-	var nbr = random(0, 10000);
-	var nbr = Array(4-nbr.toString().length).fill(0)+nbr.toString();
-	console.log(`Random code generated : ${nbr}`);
-
-	var d = new Date();
-	var de = new Date(d);
-	de.setHours(de.getHours()+1);
-
-  var booking = {room:"han solo", client:"florent.dubois@airbus.com", ts_begin:d, ts_end:de, code:nbr, status:"pending"};
-
-  console.log('Booking line insertion in the database...')
-	mgt.insertInDB(_mongodbdb,_mongodbtable, booking, (dberr, dbres)=>
-	{
-		if(dberr)
-		{
-			console.log(`Error : MongoDB insertion aborted\nInfos : ${dberr}`);
-			res.end('book code not sent');
-		}
-		else
-		{
-			console.log('Booking line insertion : success\nSending code to dashboard.');
-      io.emit('book_code', nbr);
-      res.end('book code sent');
-		}
-	});
-}).post('/calendar_events', (req, res)=>
-{
-  console.log('new calendar events request');
-  gcal.getNextEventsOn(personal_calendar, 5, false).then(
-    (events)=>
-    {
-      io.emit('calendar_events', events);
-      res.end('calendar events sent');
-    }
-  ).catch(
-    (error)=>
-    {
-      console.log('Error : Google calendar connector not working');
-      res.end('calendar events not sent');
-    }
-  );
 });
 
-const tr = 5*60*1000;
+const RINTERVAL = 5*60*1000;
+const CGINTERVAL = 10*60*1000
 
 http.listen(_server_port,() => {
 	  console.log(`Server running at http://127.0.0.1:${_server_port}/`);
     console.log('Run meeting room process');
     //launchMRProcess()
-    //var x = setInterval(launchMRProcess, 5000);
+    //var x = setInterval(launchMRProcess, RINTERVAL);
+});
+
+io.socket.on('connection', (socket)=>
+{
+  launchMRProcess();
 });
 
 function random(min, max) {
@@ -151,7 +145,6 @@ function launchMRProcess()
     {
       console.log('Request to meeting room service : Success');
       var newCode = needNewCode(events[0].creadate.getTime(), events[0].startdate.getTime());
-
       if(newCode)
       {
         console.log(`Generate code for event => room : ${events[0].organiserName} -
@@ -213,16 +206,14 @@ function generateCodeForEvent(event)
 
 function needNewCode(cread, startd)
 {
-  const dc = 10*60*1000;
-
   //timestamp actuel
   var n = new Date().getTime();
-  if(startd<n && n-cread<=tr)
+  if(startd<n && n-cread<=RINTERVAL)
   {
     //si la reunion a ete cree dans les 5 derniere minutes et le debut est avant maintenant
     return true //je genere un code
   }
-  else if(startd>n && startd-n<=dc && startd-n>=tr)
+  else if(startd>n && startd-n<=CGINTERVAL && startd-n>=RINTERVAL)
   {
     //si le debut est apres maintenant et qu'il est dans les 10 prochaine setMinutes
       return true;

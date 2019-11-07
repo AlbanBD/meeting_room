@@ -41,13 +41,14 @@ function insertInDB(db, table, data, callback)
   });
 }
 
-function getInDB(search_el, db, table, callback)
+function getInDB(id, db, table, callback)
 {
   connectToDB(db, table, (cerr, coll)=>
   {
     if(cerr){callback(cerr);}
     else {
-      coll.findOne(search_el, (gerr,gres)=>
+      var mgobj = new mongoObjId(id);
+      coll.findOne({'_id':mgobj}, (gerr,gres)=>
   		{
   			if(gerr){callback(gerr);}
   			else{
@@ -58,14 +59,14 @@ function getInDB(search_el, db, table, callback)
   });
 }
 
-function updateStatusInDB(id, db, table, callback)
+function updateStatusInDB(id, status, db, table, callback)
 {
   connectToDB(db, table, (cerr, coll)=>
   {
     if(cerr){callback(cerr);}
     else {
       var mgobj = new mongoObjId(id);
-      coll.update({'_id':mgobj}, {$set: {'status':'validate'}}, null, (uperr, upres)=>
+      coll.update({'_id':mgobj}, {$set: {'status':status}}, null, (uperr, upres)=>
       {
         if(uperr){callback(uperr);}
         else {

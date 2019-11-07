@@ -95,39 +95,38 @@ class CalendarEvent
     }
 }
 
-function getWithCredentialFile(file)
+function getWithCredentialFile(cred_file)
 {
   try {
-    var fileContent = fs.readFileSync(file, 'utf8');
-    var filepath = path.dirname(file);
-    var auth = authorize(JSON.parse(fileContent));
-    return new CalendarConnector(google.calendar({version: 'v3', auth}));
+    var filepath = path.dirname(cred_file);
+    var credContent = fs.readFileSync(cred_file, 'utf8');
+
+    var tokenFile = filepath+'/token.json';
+    var tokenContent = fs.readFileSync(tokenFile, 'utf8');
+
+    const {client_secret, client_id, redirect_uris} = (JSON.parse(credContent)).installed;
+    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+    oAuth2Client.setCredentials(JSON.parse(tokenContent));
+
+    return new CalendarConnector(google.calendar({version: 'v3', oAuth2Client}));
+
   } catch (e) {
-    console.log(`Pas de fichier ${file}`);
-    return null;
+      if (e.code == 'ENOENT')
+      {
+        if(e.path == tokenFile)
+        {
+          throw {'code':'token', 'message': 'No token.json file found in the credential directory.'};
+        }
+        else {
+          throw {'code':'credential','message':`No credential file : ${cred_file} found.`};
+        }
+      }
+      else{
+        console.log('Error '+e);
+      }
   }
 }
 
-// Load client secrets from a local file.
-/**
- * Create an OAuth2 client with the given credentials, and then execute the
- * given callback function.
- * @param {Object} credentials The authorization client credentials.
- * @param {function} callback The callback to call with the authorized client.
- */
-function authorize(credentials) {
-  const {client_secret, client_id, redirect_uris} = credentials.installed;
-  const oAuth2Client = new google.auth.OAuth2(
-      client_id, client_secret, redirect_uris[0]);
-  try {
-    var token = fs.readFileSync(TOKEN_PATH,'utf-8');
-    oAuth2Client.setCredentials(JSON.parse(token));
-    return oAuth2Client;
-  } catch (e) {
-    //getAccessToken(oAuth2Client, callback);
-    console.log('error');
-  }
-}
 
 /**
  * Get and store new token after prompting for user authorization, and then
@@ -135,34 +134,46 @@ function authorize(credentials) {
  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
  * @param {getEventsCallback} callback The callback for the authorized client.
  */
-function getAccessToken(oAuth2Client, callback) {
 
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-  });
-
-  console.log('Authorize this app by visiting this url:', authUrl);
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  rl.question('Enter the code from that page here: ', (code) => {
-    rl.close();
-    oAuth2Client.getToken(code, (err, token) => {
-      if (err) callback('Error retrieving access token', err);
-      oAuth2Client.setCredentials(token);
-      // Store the token to disk for later program executions
-      fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-        if (err) callback(err);
-        console.log('Token stored to', TOKEN_PATH);
+function generateAccessToken(credentialFile, callback) {
+  fs.readFile(credentialFile, 'utf8', (err, content)=>
+  {
+    if(err)callback(err);
+    const {client_secret, client_id, redirect_uris} = (JSON.parse(content)).installed;
+    if(client_secret && client_id && redirect_uris)
+    {
+      const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+      const authUrl = oAuth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: SCOPES,
       });
-      callback(null, oAuth2Client);
-    });
+      console.log('Authorize this app by visiting this url:', authUrl);
+
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      rl.question('Enter the code from that page here: ', (code) => {
+        rl.close();
+        oAuth2Client.getToken(code, (err, token) => {
+          if (err) callback('Error retrieving access token', err);
+          // Store the token to disk for later program executions
+          fs.writeFile(path.dirname(credentialFile)+'/token.json', JSON.stringify(token), (err) => {
+            if (err) callback(err);
+            console.log('Token stored to', path.dirname(credentialFile)+'/token.json');
+            callback(null);
+          });
+        });
+      });
+    }
+    else
+    {
+      callback('Credentials file not conform');
+    }
   });
 }
 
 //exports.CalendarConnector = CalendarConnector;
 exports.getWithCredentialFile = getWithCredentialFile;
+exports.generateAccessToken = generateAccessToken;

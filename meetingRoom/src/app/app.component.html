@@ -1,10 +1,13 @@
 <div>
-  <app-code></app-code>
-  <app-events></app-events>
-  <div class="col-sm-3 next, red">
+<div class="col-sm-1 leboutton component"></div>
+  <div class="col-sm-11 heure component">
       <!------- Affichage de l'heure -------------->
-      <h1>{{ date | date: "HH:mm:ss" }}</h1>
+      <h1>{{ date | date: "HH:mm:ss" }}</h1><hr>
       <!------- Affichage de la date -------------->
       <h1>{{ date | date: 'fullDate' }}</h1>
     </div>
+
+    <app-events></app-events>
+  <app-code></app-code>
+
 </div>

@@ -55,7 +55,7 @@ app.post('/meetingCommand', (req,res) =>
           if(req.body.code==dbres.code)
   				{
   					console.log('Client code valid, saving validation on the database...');
-            mgt.updateStatusInDB(meet_id, 'validate', _mongodbdb, _mongodbtable, (uperr)=>
+            mgt.updateStatusInDB(req.body._id, 'validate', _mongodbdb, _mongodbtable, (uperr)=>
             {
               if(uperr){
                 console.log(`Error : saving validation in database : aborted\nInfos : ${uperr}`);
@@ -64,6 +64,7 @@ app.post('/meetingCommand', (req,res) =>
               else
               {
                 console.log(`Saving validation : success`);
+                io.emit('status', true);
                 res.end(JSON.stringify({'command':'validation', 'result':'valid'}));
               }
             });
@@ -71,6 +72,7 @@ app.post('/meetingCommand', (req,res) =>
           else
           {
             console.log('Client code not valid, sending message.');
+            io.emit('status', false);
             res.end(JSON.stringify({'command':'validation', 'result':'unvalid'}));
           }
         }
@@ -115,6 +117,10 @@ app.post('/meetingCommand', (req,res) =>
       }
     }
   });
+}).get('/forceMeeting', (req, res)=>
+{
+  launchMRProcess(true);
+  res.end('ok')
 });
 
 const RINTERVAL = 5*60*1000;
@@ -136,7 +142,7 @@ function random(min, max) {
 	return Math.round(Math.random() * (max - min) + min);
 }
 
-function launchMRProcess()
+function launchMRProcess(force)
 {
   console.log("Request to meeting room service : In Progress");
   gcal.getNextEventsOn(personal_calendar, 5, false).then(
@@ -144,7 +150,7 @@ function launchMRProcess()
     {
       console.log('Request to meeting room service : Success');
       var newCode = needNewCode(events[0].creadate.getTime(), events[0].startdate.getTime());
-      if(newCode)
+      if(newCode || force)
       {
         console.log(`Generate code for event => room : ${events[0].organiserName} -
           description : ${events[0].description} - id : ${events[0].id} - by : ${events[0].creator} : In Progress`);
@@ -180,9 +186,9 @@ function generateCodeForEvent(event)
     console.log(`Random code generated : ${nbr}`);
 
     event['code'] = nbr;
+    event['status'] = 'pending';
 
     var dbevent = JSON.parse(JSON.stringify(event));
-    dbevent['status'] = 'pending'
     dbevent['dbtimestamp'] = Date.now();
     console.log('Booking line insertion in the database...')
 
@@ -212,7 +218,7 @@ function needNewCode(cread, startd)
     //si la reunion a ete cree dans les 5 derniere minutes et le debut est avant maintenant
     return true //je genere un code
   }
-  else if(startd>n && startd-n<=CGINTERVAL && startd-n>=RINTERVAL)
+  else if(startd>n && startd-n<=CGINTERVAL/* && startd-n>=RINTERVAL*/)
   {
     //si le debut est apres maintenant et qu'il est dans les 10 prochaine setMinutes
       return true;

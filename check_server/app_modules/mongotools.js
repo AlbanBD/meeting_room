@@ -41,14 +41,14 @@ function insertInDB(db, table, data, callback)
   });
 }
 
-function getInDB(id, db, table, callback)
+function getInDB(sh_el, db, table, callback)
 {
   connectToDB(db, table, (cerr, coll)=>
   {
     if(cerr){callback(cerr);}
     else {
-      var mgobj = new mongoObjId(id);
-      coll.findOne({'_id':mgobj}, (gerr,gres)=>
+      var mgobj = (typeof(sh_el) == 'object')?sh_el:{'_id': new mongoObjId(sh_el)};
+      coll.findOne(mgobj, (gerr,gres)=>
   		{
   			if(gerr){callback(gerr);}
   			else{

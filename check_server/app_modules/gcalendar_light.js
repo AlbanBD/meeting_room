@@ -1,12 +1,12 @@
 const {google} = require('googleapis');
 
 
-listEvents('AIzaSyBb9qFiJse973OCOiT5SdHUqUY6YdE9CCw')
+listEvents('AIzaSyDZn6isLBl3ZxWhzIjwZC5vkePegoM90rg')
 
 function listEvents(apikey) {
   const calendar = google.calendar({version: 'v3', auth:apikey});
   calendar.events.list({
-    calendarId: 'kgto7ofa0s0i49jmhal6rhte68@group.calendar.google.com',
+    calendarId: 'mre32s5c0kv8802huac21qdk7g@group.calendar.google.com',
     timeMin: (new Date()).toISOString(),
     maxResults: 10,
     singleEvents: true,

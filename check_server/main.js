@@ -1,10 +1,12 @@
 //import fs lib to use file system
 const fs = require('fs');
+const {google} = require('googleapis');
 //import bodyparser lib to parse request
 const bodyParser = require('body-parser');
 //import http and express lib to handle request
 const cors = require('cors')
 const app = require('express')();
+const path = require('path');
 const http = require('http').Server(app);
 //import io.Socket and link to http
 const io = require('socket.io')(http)
@@ -16,7 +18,17 @@ const _mongodbtable = 'reservations';
 const calendar_credential = './credentials/gcalendar_credentials.json';
 const gcalapi = require('./app_modules/gcalendar_connector');
 
-const personal_calendar = 'kgto7ofa0s0i49jmhal6rhte68@group.calendar.google.com';
+//import items to delete google calendar events
+var credContent = fs.readFileSync(calendar_credential, 'utf8');
+var tokenFile = './credentials/token.json';
+var tokenContent = fs.readFileSync(tokenFile, 'utf8');
+const {client_secret, client_id, redirect_uris} = (JSON.parse(credContent)).installed;
+const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+oAuth2Client.setCredentials(JSON.parse(tokenContent));
+const calendar = google.calendar({version: 'v3', auth: oAuth2Client});
+const personal_calendar = 'mre32s5c0kv8802huac21qdk7g@group.calendar.google.com';
+var momo;
+var tev;
 
 
 // server listen port
@@ -28,7 +40,7 @@ try {
   if(e.code =='token')
   {
     console.log(e.message);
-    console.log('Use the commande "node generateToken.js [credential_file]" to create token file')
+    console.log('Use the commande "node generateToken.js [credential_file]" to create token file');
   }
   else {
     console.log(e.message);
@@ -48,7 +60,7 @@ app.post('/meetingCommand', (req,res) =>
 			{
 				if(dberr){
           console.log(`Error: getting code from database : aborted\nInfos : ${dberr}`);
-          res.end(JSON.stringify({'command':'validation', 'result':'error'}));
+          res.end(JSON.stringify({'return':'pbserver'}));
         }
         else
         {
@@ -59,13 +71,19 @@ app.post('/meetingCommand', (req,res) =>
             {
               if(uperr){
                 console.log(`Error : saving validation in database : aborted\nInfos : ${uperr}`);
-                res.end(JSON.stringify({'command':'validation', 'result':'error'}));
+                res.end(JSON.stringify({'return': 'pbserver'}));
               }
               else
               {
                 console.log(`Saving validation : success`);
                 io.emit('status', true);
-                res.end(JSON.stringify({'command':'validation', 'result':'valid'}));
+                updateEvent(momo);
+                res.end(JSON.stringify({'return':'validation'}));
+                tev = {
+                  code: 'Validée',
+                  status: 'validate'
+                }
+                io.emit('cur_event', tev);
               }
             });
           }
@@ -73,7 +91,7 @@ app.post('/meetingCommand', (req,res) =>
           {
             console.log('Client code not valid, sending message.');
             io.emit('status', false);
-            res.end(JSON.stringify({'command':'validation', 'result':'unvalid'}));
+            res.end(JSON.stringify({'return': 'pbcode'}));
           }
         }
         });
@@ -81,23 +99,30 @@ app.post('/meetingCommand', (req,res) =>
     case 'annulation':
       console.log(`Validation request received from client for meeting ${req.body._id} : ${req.body.code}`);
       console.log('Getting meeting code from database...');
-      mgt.updateStatusInDB(meet_id, 'annulate', _mongodbdb, _mongodbtable, (uperr)=>
+      mgt.updateStatusInDB(req.body._id, 'annulate', _mongodbdb, _mongodbtable, (uperr)=>
       {
         if(uperr){
           console.log(`Error : saving annulation in database : aborted\nInfos : ${uperr}`);
-          res.end(JSON.stringify({'command':'annulation', 'result':'error'}));
+          res.end(JSON.stringify({'return': 'pbserver'}));
         }
         else
         {
           console.log(`Saving annulation : success`);
-          res.end(JSON.stringify({'command':'annulation', 'result':'valid'}));
+          deleteEvent(momo);
+          res.end(JSON.stringify({'return': 'annulation'}));
+          tev = {
+            code: 'Annulée',
+            status: 'annulate'
+          }
+          io.emit('cur_event', tev);
         }
       });
       break;
     }
-}).get('/currentMeeting', (req, res)=>
+}).post('/currentMeeting', (req, res)=>
 {
   var login = req.body.id;
+  console.log(req.body);
   console.log(`Request to get meeting for ${login}`);
   mgt.getInDB({'creator':login,'status':'pending'}, _mongodbdb, _mongodbtable, (dberr, dbres) =>
   {
@@ -106,13 +131,14 @@ app.post('/meetingCommand', (req,res) =>
       if (dbres)
       {
         console.log(`Meeting found with id ${dbres._id}`);
-        var data = {'_id':dbres._id, 'eventId': dbres.id, 'description': dbres.description, 'startdate': dbres.startdate, 'enddate':dbres.enddate, 'room':dbres.organiserName}
+        var data = {'_id':dbres._id, 'eventId': dbres.eventId, 'description': dbres.description, 'startdate': dbres.startdate, 'enddate':dbres.enddate, 'room':dbres.organiserName}
+        momo = dbres.eventId;
         res.setHeader('Content-Type','application/json');
-        console.log('send result to client.')
+        console.log('send result to client.');
         res.send(JSON.stringify(data));
       }
       else {
-        console.log('No meeting found, send null to client')
+        console.log('No meeting found, send null to client');
         res.send(null);
       }
     }
@@ -154,10 +180,12 @@ function launchMRProcess(force)
       {
         console.log(`Generate code for event => room : ${events[0].organiserName} -
           description : ${events[0].description} - id : ${events[0].id} - by : ${events[0].creator} : In Progress`);
+          var startdate = events[0].startdate;
         generateCodeForEvent(events[0]).then((ev)=>
         {
           console.log('Generate code for event : Success');
           console.log('Send current event to dashboard.');
+          io.emit('data', startdate);
           io.emit('cur_event', ev);
         }).catch((err)=>
         {
@@ -181,7 +209,7 @@ function generateCodeForEvent(event)
 {
   return new Promise((resolve, reject)=>
   {
-    var nbr = random(0, 10000);
+    var nbr = random(1000, 10000);
     var nbr = Array(4-nbr.toString().length).fill(0)+nbr.toString();
     console.log(`Random code generated : ${nbr}`);
 
@@ -226,4 +254,30 @@ function needNewCode(cread, startd)
   else {
     return false;
   }
+}
+
+function deleteEvent(eventId) {
+
+      var params = {
+        calendarId: personal_calendar,
+        eventId: eventId,
+      };
+
+      calendar.events.delete(params, function(err) {
+        if (err) {
+          console.log('The API returned an ' + err);
+          return;
+        }
+        console.log('Event deleted.');
+      });
+}
+
+function updateEvent(update) {
+  calendar.events.patch({
+  "calendarId": personal_calendar,
+  "eventId": update,
+  "resource": {
+    "colorId": "2"
+  }
+});
 }

@@ -5,12 +5,12 @@ const path = require('path');
 
 // scope listing the autorisations
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+const SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events'];
 
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
-const TOKEN_PATH = './gcalendar/token.json';
+const TOKEN_PATH = './credentials/token.json';
 
 class CalendarConnector
 {
@@ -37,7 +37,7 @@ class CalendarConnector
         if(onlytoday)//j'ajoute une option maxtime si je ne veut que les resultat de la date actuelle
         {
           var ed = new Date(Date.UTC(cd.getYear()+1900, cd.getMonth(),cd.getDate()));//date actuelle OOhOOs000ms
-          ed.setTime(ed.getTime()+86399999); //je rejoute 23h59m59s999ms
+          ed.setTime(ed.getTime()+86399999); //je rajoute 23h59m59s999ms
           clist_opt['timeMax']= ed.toISOString()
         }
 
@@ -139,7 +139,7 @@ function generateAccessToken(credentialFile, callback) {
   fs.readFile(credentialFile, 'utf8', (err, content)=>
   {
     if(err)callback(err);
-    const {client_secret, client_id, redirect_uris} = (JSON.parse(credContent)).installed;
+    const {client_secret, client_id, redirect_uris} = (JSON.parse(content)).installed;
     if(client_secret && client_id && redirect_uris)
     {
       const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);

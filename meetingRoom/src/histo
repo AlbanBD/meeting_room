@@ -1,0 +1,35 @@
+<script type="text/javascript">
+
+  var cd;
+  var test;
+  var dt;
+  var diff = {};
+  var tmp;
+  var debut;
+
+  function dateDiff(date1, date2){
+    tmp = date2 - date1;
+    tmp = Math.floor(tmp/1000);
+    diff.sec = tmp % 60;
+
+    tmp = Math.floor((tmp-diff.sec)/60);
+    diff.min = tmp % 60;
+
+    tmp = Math.floor((tmp-diff.min)/60);
+    diff.hour = tmp % 24;
+
+    return diff;
+  }
+
+  function minuteur(start) {
+    cd = new Date();
+    dt = Date.parse(cd, "yyyy-MM-dd HH:mm:ss");
+    debut = new Date(start);
+    diff = dateDiff(dt, debut);
+    test = diff.min + ' : ' + diff.sec;
+    return test;
+  }
+
+  console.log(minuteur('2020-03-02T11:30:00.000Z'));
+
+</script>

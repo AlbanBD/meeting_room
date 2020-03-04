@@ -120,6 +120,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "meetingRoom"
+    }
+  },
+  "defaultProject": "meetingRoom",
+  "cli": {
+    "analytics": false
+  }
 }

@@ -1,13 +1,21 @@
-<div>
-<div class="col-sm-1 leboutton component"></div>
-  <div class="col-sm-11 heure component">
-      <!------- Affichage de l'heure -------------->
-      <h1>{{ date | date: "HH:mm:ss" }}</h1><hr>
-      <!------- Affichage de la date -------------->
-      <h1>{{ date | date: 'fullDate' }}</h1>
-    </div>
+<div class="container">
 
-    <app-events></app-events>
   <app-code></app-code>
+
+  <div class="heure">
+    <h1>{{ date | date: "HH:mm:ss" }}</h1>
+    <hr>
+  </div>
+
+  <app-events></app-events>
+  <div class="retour">
+    <h1>Incidents :</h1>
+    <hr>
+    <div>
+    <button class="button">Electronique</button>
+    <button class="button">Mobilier</button>
+    <button class="button">Autres</button>
+    </div>
+  </div>
 
 </div>
